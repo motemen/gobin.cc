@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+GOBINARIES_ROOT=${GOBINARIES_ROOT-https://gobinari.es}
+
+root_dir=$(cd "$(dirname "$0")" && cd .. && pwd)
+
+build_dir="$root_dir/public"
+mkdir -p "$build_dir"
+
+sources_dir="$root_dir/sources"
+
+find "$sources_dir" -type f |
+    while read -r s; do
+        origin=$(head -1 "$s")
+        name=${s#$sources_dir/}
+        echo "--> $name" >&2
+        cat <<EOD > "$build_dir/$name"
+<meta name="go-get" "$GOBINARIES_ROOT/$name git $origin">
+EOD
+    done
