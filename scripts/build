@@ -17,6 +17,6 @@ find "$sources_dir" -type f |
         name=${s#$sources_dir/}
         echo "--> $name" >&2
         cat <<EOD > "$build_dir/$name"
-<meta name="go-get" "$GOBINARIES_ROOT/$name git $origin">
+<meta name="go-import" content="$GOBINARIES_ROOT/$name git $origin">
 EOD
     done
