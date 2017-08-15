@@ -1,1 +1,1 @@
-<meta name="go-get" "https://motemen.github.io/gobinaries/golint git github.com/golang/lint/golint">
+<meta name="go-import" content="https://motemen.github.io/gobinaries/golint git github.com/golang/lint/golint">
