@@ -2,7 +2,7 @@
 
 set -e
 
-GOBINARIES_ROOT=${GOBINARIES_ROOT-https://gobinari.es}
+GOBINARIES_ROOT=${GOBINARIES_ROOT-gobinari.es}
 
 root_dir=$(cd "$(dirname "$0")" && cd .. && pwd)
 
