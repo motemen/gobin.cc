@@ -1,0 +1,81 @@
+#!/bin/bash
+
+set -e
+
+o() {
+    echo "--> $*" >&2
+}
+
+die() {
+    echo >&2 "$*"
+    exit 1
+}
+
+sync-remote() {
+    remote=$1
+    name=$(basename "$remote")
+
+    # TODO: check go1 branch
+    if git ls-files --error-unmatch "$name" > /dev/null 2>&1; then
+        if git ls-files -s "$name" | grep -v '^160000' > /dev/null 2>&1; then
+            die "$path is not a submodule"
+        fi
+
+        o "updating submodule $name"
+        git config -f .gitmodules "submodule.$name.url" "$remote"
+        git submodule update --remote --init "$name"
+    else
+        o "adding $remote as submodule $name"
+        git submodule add "$remote" "$name"
+    fi
+}
+
+sync-remote-subpkg() {
+    remote=$1
+    path=$2
+    name=$(basename "$path")
+
+    o "fetching $remote"
+    git fetch --quiet "$remote"
+
+    if ! git rev-parse --verify FETCH_HEAD:LICENSE > /dev/null 2>&1; then
+        die "$remote does not have LICENSE file"
+    fi
+
+    o "checking out remote's $path at $name/"
+    treeish=$(git rev-parse "FETCH_HEAD:$path")
+    test "$(git cat-file -t "$treeish")" = "tree"
+    git rm -q -rf "$name/"
+    git read-tree -u --prefix="$name/" "$treeish"
+
+    o "copying LICENSE to $name/"
+    git cat-file blob FETCH_HEAD:LICENSE > "$name/LICENSE"
+    git add "$name/LICENSE"
+}
+
+main() {
+    find "$sources_dir" -type f |
+        while read -r s; do
+            origin=$(head -1 "$s")
+            name=${s#$sources_dir/}
+            o "$name	=> $origin"
+            case "$origin" in
+                https://github.com/*/*/*)
+                    path=${origin#https://github.com/*/*/}
+                    remote=${origin/\/$path/}
+                    sync-remote-subpkg "$remote" "$path"
+                ;;
+
+                https://github.com/*/*)
+                    sync-remote "$origin"
+                ;;
+
+            esac
+        done
+}
+
+root_dir=$(cd "$(dirname "$0")" && cd .. && pwd)
+
+sources_dir="$root_dir/sources"
+
+main
