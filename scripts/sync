@@ -3,7 +3,7 @@
 set -e
 
 o() {
-    echo "--> $*" >&2
+    echo "$*" >&2
 }
 
 die() {
@@ -30,7 +30,7 @@ sync-remote() {
     fi
 }
 
-sync-remote-subpkg() {
+sync-remote-subpath() {
     remote=$1
     path=$2
     name=$(basename "$path")
@@ -58,16 +58,20 @@ main() {
         while read -r s; do
             origin=$(head -1 "$s")
             name=${s#$sources_dir/}
-            o "$name	=> $origin"
+            o "# $name ($origin)"
             case "$origin" in
-                https://github.com/*/*/*)
-                    path=${origin#https://github.com/*/*/}
+                github.com/*/*/*)
+                    path=${origin#github.com/*/*/}
                     remote=${origin/\/$path/}
-                    sync-remote-subpkg "$remote" "$path"
+                    sync-remote-subpath "https://$remote" "$path"
                 ;;
 
-                https://github.com/*/*)
-                    sync-remote "$origin"
+                github.com/*/*)
+                    sync-remote "https://$origin"
+                ;;
+
+                *)
+                    echo "unknown origin: $origin" >&2
                 ;;
 
             esac
