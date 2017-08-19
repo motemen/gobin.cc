@@ -7,3 +7,6 @@
 [submodule "govendor"]
 	path = govendor
 	url = https://github.com/kardianos/govendor
+[submodule "reflex"]
+	path = reflex
+	url = https://github.com/cespare/reflex
