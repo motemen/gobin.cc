@@ -1,0 +1,9 @@
+[submodule "ghr"]
+	path = ghr
+	url = https://github.com/tcnksm/ghr
+[submodule "gore"]
+	path = gore
+	url = https://github.com/motemen/gore
+[submodule "govendor"]
+	path = govendor
+	url = https://github.com/kardianos/govendor
