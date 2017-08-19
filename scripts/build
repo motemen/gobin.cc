@@ -3,6 +3,7 @@
 set -e
 
 GOBINARIES_ROOT=${GOBINARIES_ROOT-gobinari.es}
+GOBINARIES_GIT_ORIGIN=https://github.com/motemen/gobinaries
 
 root_dir=$(cd "$(dirname "$0")" && cd .. && pwd)
 
@@ -15,8 +16,22 @@ find "$sources_dir" -type f |
     while read -r s; do
         origin=$(head -1 "$s")
         name=${s#$sources_dir/}
-        echo "--> $name" >&2
-        cat <<EOD > "$build_dir/$name"
+        echo "--> $name	=> $origin" >&2
+        case "$origin" in
+            https://github.com/*/*/*)
+                path=${origin#https://github.com/*/*/}
+                remote=${origin/$path/}
+                ./scripts/sync-remote-subtree "$remote" "$path"
+                cat <<EOD > "$build_dir/$name"
+<meta name="go-import" content="$GOBINARIES_ROOT git $GOBINARIES_GIT_ORIGIN">
+EOD
+            ;;
+
+            https://github.com/*/*)
+                cat <<EOD > "$build_dir/$name"
 <meta name="go-import" content="$GOBINARIES_ROOT/$name git $origin">
 EOD
+            ;;
+
+        esac
     done
