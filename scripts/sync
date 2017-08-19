@@ -45,7 +45,7 @@ sync-remote-subpath() {
     o "checking out remote's $path at $name/"
     treeish=$(git rev-parse "FETCH_HEAD:$path")
     test "$(git cat-file -t "$treeish")" = "tree"
-    git rm -q -rf "$name/"
+    test -e "$name" && git rm -q -rf -- "$name/"
     git read-tree -u --prefix="$name/" "$treeish"
 
     o "copying LICENSE to $name/"
