@@ -36,17 +36,20 @@ sync-remote-subpath() {
     name=$(basename "$path")
 
     o "fetching $remote"
-    git fetch --quiet "$remote"
+    git fetch -q "$remote"
 
     if ! git rev-parse --verify FETCH_HEAD:LICENSE > /dev/null 2>&1; then
         die "$remote does not have LICENSE file"
     fi
 
-    o "checking out remote's $path at $name/"
+    o "checking out $path/ on remote to $name/"
     treeish=$(git rev-parse "FETCH_HEAD:$path")
     test "$(git cat-file -t "$treeish")" = "tree"
-    test -e "$name" && git rm -q -rf -- "$name/"
+    test -e "./$name" && rm -rf "./$name" && { git add -u "./$name" > /dev/null 2>&1 || true; }
     git read-tree -u --prefix="$name/" "$treeish"
+    for f in "$name"/*; do
+        test -d "$f" && git rm -q -rf "$f"
+    done
 
     o "copying LICENSE to $name/"
     git cat-file blob FETCH_HEAD:LICENSE > "$name/LICENSE"
@@ -54,32 +57,29 @@ sync-remote-subpath() {
 }
 
 main() {
-    find "$sources_dir" -type f |
-        while read -r s; do
-            origin=$(head -1 "$s")
-            name=${s#$sources_dir/}
-            o "# $name ($origin)"
-            case "$origin" in
-                github.com/*/*/*)
-                    path=${origin#github.com/*/*/}
-                    remote=${origin/\/$path/}
-                    sync-remote-subpath "https://$remote" "$path"
-                ;;
+    while read -r origin; do
+        name=$(basename "$origin")
 
-                github.com/*/*)
-                    sync-remote "https://$origin"
-                ;;
+        o "# $name ($origin)"
+        case "$origin" in
+            github.com/*/*/*)
+                path=${origin#github.com/*/*/}
+                remote=${origin/\/$path/}
+                sync-remote-subpath "https://$remote" "$path"
+            ;;
 
-                *)
-                    echo "unknown origin: $origin" >&2
-                ;;
+            github.com/*/*)
+                sync-remote "https://$origin"
+            ;;
 
-            esac
-        done
+            *)
+                echo "unknown origin: $origin" >&2
+            ;;
+
+        esac
+    done < SOURCES
 }
 
 root_dir=$(cd "$(dirname "$0")" && cd .. && pwd)
-
-sources_dir="$root_dir/sources"
 
 main

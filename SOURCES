@@ -1,0 +1,7 @@
+github.com/tcnksm/ghr
+github.com/jteeuwen/go-bindata/go-bindata
+github.com/golang/lint/golint
+github.com/motemen/gore
+github.com/kardianos/govendor
+github.com/golang/mock/mockgen
+github.com/cespare/reflex
