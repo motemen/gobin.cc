@@ -1,0 +1,10 @@
+script:
+  - openssl aes-256-cbc -K $encrypted_f245dd2b33ac_key -iv $encrypted_f245dd2b33ac_iv -in internal/ci/github-deploy-key.enc -out ~/.ssh/id_rsa -d
+  - chmod go-r ~/.ssh/id_rsa
+  - git config --global user.email builds@travis-ci.org
+  - git config --global user.name 'Travis CI'
+  - GIT_SSH_COMMAND='ssh -oStrictHostKeyChecking=no' ./internal/ci/auto-update
+
+branches:
+  only:
+    - master
