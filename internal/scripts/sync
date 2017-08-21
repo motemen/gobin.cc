@@ -24,9 +24,15 @@ sync-remote() {
         o "updating submodule $name"
         git config -f .gitmodules "submodule.$name.url" "$remote"
         git submodule update --remote --init "$name"
+
+        if ! git diff --quiet --cached "$name"; then
+            echo " - update $name"
+        fi
     else
         o "adding $remote as submodule $name"
         git submodule add "$remote" "$name"
+
+        echo " - add $name"
     fi
 }
 
@@ -42,10 +48,13 @@ sync-remote-subpath() {
         die "$remote does not have LICENSE file"
     fi
 
+    already_existed=
+    test -e "$name" && already_existed=1
+
     o "checking out $path/ on remote to $name/"
     treeish=$(git rev-parse "FETCH_HEAD:$path")
     test "$(git cat-file -t "$treeish")" = "tree"
-    test -e "./$name" && rm -rf "./$name" && { git add -u "./$name" > /dev/null 2>&1 || true; }
+    test "$already_existed" && git rm --ignore-unmatch -q -rf "$name"
     git read-tree -u --prefix="$name/" "$treeish"
     for f in "$name"/*; do
         test -d "$f" && git rm -q -rf "$f"
@@ -54,6 +63,13 @@ sync-remote-subpath() {
     o "copying LICENSE to $name/"
     git cat-file blob FETCH_HEAD:LICENSE > "$name/LICENSE"
     git add "$name/LICENSE"
+
+    if ! git diff --quiet --cached --diff-filter=A -- "$name"; then
+        echo " - add $name"
+    fi
+    if ! git diff --quiet --cached --diff-filter=M -- "$name"; then
+        echo " - update $name"
+    fi
 }
 
 main() {
@@ -79,7 +95,5 @@ main() {
         esac
     done < SOURCES
 }
-
-root_dir=$(cd "$(dirname "$0")" && cd .. && pwd)
 
 main
