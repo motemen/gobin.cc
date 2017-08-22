@@ -5,3 +5,4 @@ github.com/motemen/gore
 github.com/kardianos/govendor
 github.com/golang/mock/mockgen
 github.com/cespare/reflex
+github.com/mitchellh/gox
