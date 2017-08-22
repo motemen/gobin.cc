@@ -5,4 +5,4 @@ set -e
 m=$(./internal/scripts/sync)
 git diff --quiet --cached && exit
 git commit -m "automatic update" -m "$m"
-git push origin master
+git push git@github.com:motemen/gobin.cc HEAD:master
