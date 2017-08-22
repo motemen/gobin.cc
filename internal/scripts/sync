@@ -93,6 +93,8 @@ main() {
             ;;
 
         esac
+
+        test "$(go list -f '{{.Name}}' "./$name")" = 'main' || die "$name is not a main package"
     done < SOURCES
 }
 
