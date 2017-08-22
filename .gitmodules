@@ -10,3 +10,6 @@
 [submodule "reflex"]
 	path = reflex
 	url = https://github.com/cespare/reflex
+[submodule "gox"]
+	path = gox
+	url = https://github.com/mitchellh/gox
