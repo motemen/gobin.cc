@@ -13,3 +13,6 @@
 [submodule "gox"]
 	path = gox
 	url = https://github.com/mitchellh/gox
+[submodule "gocode"]
+	path = gocode
+	url = https://github.com/nsf/gocode
