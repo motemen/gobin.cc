@@ -12,7 +12,8 @@ git clone git@github.com:motemen/gobin.cc --branch gh-pages "$workdir"
 
 cd "$workdir"
 
-"$root/internal/scripts/update-index" index.html
+cat index.html | "$root/internal/scripts/update-index" > index.html_
+mv index.html_ index.html
 
 git diff --quiet && exit
 git commit -a -m "automatic update" -m "source-revision: $(git rev-parse origin/master)"
