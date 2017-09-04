@@ -1,0 +1,17 @@
+#!/usr/bin/env perl -i
+use strict;
+use warnings;
+
+my @sources = split /\n/, qx(git show origin/master:SOURCES);
+my @list;
+
+for (@sources) {
+    my ($name) = m<([^/]+)$>;
+    push @list, qq(<li>gobin.cc/$name (<a href="https://godoc.org/$_">$_</a>)</li>);
+}
+
+while (defined($_ = <ARGV>)) {
+    local $,;
+    s{<ul>.*?</ul>}{<ul>@list</ul>};
+    print;
+}

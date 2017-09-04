@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+root=$(cd "$(dirname "$0")" && cd .. && cd .. && pwd)
+workdir="$root/.work/gh-pages"
+
+rm -rf "$workdir"
+mkdir -p "$workdir"
+
+git clone git@github.com:motemen/gobin.cc --branch gh-pages "$workdir"
+
+cd "$workdir"
+
+"$root/internal/scripts/update-index" index.html
+
+git diff --quiet && exit
+git commit -a -m "automatic update" -m "source-revision: $(git rev-parse origin/master)"
+git push -n git@github.com:motemen/gobin.cc HEAD:gh-pages

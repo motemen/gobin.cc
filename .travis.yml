@@ -4,6 +4,7 @@ script:
   - git config --global user.email builds@travis-ci.org
   - git config --global user.name 'Travis CI'
   - GIT_SSH_COMMAND='ssh -oStrictHostKeyChecking=no' ./internal/ci/auto-update
+  - GIT_SSH_COMMAND='ssh -oStrictHostKeyChecking=no' ./internal/ci/auto-update-index
 
 branches:
   only:
