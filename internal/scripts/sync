@@ -39,7 +39,7 @@ sync-remote() {
 sync-remote-subpath() {
     remote=$1
     path=$2
-    name=$(basename "$path")
+    name=$3
 
     o "fetching $remote"
     git fetch -q "$remote"
@@ -81,10 +81,16 @@ main() {
             github.com/*/*/*)
                 path=${origin#github.com/*/*/}
                 remote=${origin/\/$path/}
-                sync-remote-subpath "https://$remote" "$path"
+                sync-remote-subpath "https://$remote" "$path" "$(basename "$path")"
             ;;
 
             github.com/*/*)
+                sync-remote-subpath "https://$origin" '' "$(basename "$origin")"
+            ;;
+
+            github.com/*/*)
+                # TODO(motemen): as of go1.9, "go get -u" does not support submodules
+                #                so we use sync-remote-subpath stragegy even for toplevel packages.
                 sync-remote "https://$origin"
             ;;
 
