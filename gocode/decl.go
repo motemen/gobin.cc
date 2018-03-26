@@ -734,7 +734,7 @@ func (a *anonymous_typer) Visit(node ast.Node) ast.Visitor {
 		case token.TYPE:
 			for _, s := range t.Specs {
 				ts := s.(*ast.TypeSpec)
-				if ts.Assign != token.NoPos {
+				if isAliasTypeSpec(ts) {
 					ts.Type = check_for_anon_type(ts.Type, a.flags, a.scope)
 				}
 			}
@@ -1035,6 +1035,12 @@ func (d *decl) find_child_and_in_embedded(name string) *decl {
 	if d == nil {
 		return nil
 	}
+
+	if d.is_visited() {
+		return nil
+	}
+	d.set_visited()
+	defer d.clear_visited()
 
 	c := d.find_child(name)
 	if c == nil {
