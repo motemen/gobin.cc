@@ -18,19 +18,19 @@ import (
 )
 
 const (
-	// EnvGitHubToken is environmental var to set GitHub API token
+	// EnvGitHubToken is an environment var containting the GitHub API token
 	EnvGitHubToken = "GITHUB_TOKEN"
 
-	// EnvGitHubAPI is environmental var to set GitHub API base endpoint.
-	// This is used mainly by GitHub Enterprise user.
+	// EnvGitHubAPI is an environment var containing the GitHub API base endpoint.
+	// This is used mainly by GitHub Enterprise users.
 	EnvGitHubAPI = "GITHUB_API"
 
-	// EnvDebug is environmental var to handle debug mode
+	// EnvDebug is an environment var to handle debug mode
 	EnvDebug      = "GHR_DEBUG"
 	EnvStackTrace = "GHR_TRACE"
 )
 
-// Exit codes are in value that represnet an exit code for a paticular error.
+// Exit codes are set to a value that represnet an exit code for a paticular error.
 const (
 	ExitCodeOK int = 0
 
@@ -51,24 +51,24 @@ const (
 	DefaultParallel     = -1
 )
 
-// Debugf prints debug output when EnvDebug is given
+// Debugf prints debug output when EnvDebug is set
 func Debugf(format string, args ...interface{}) {
 	if env := os.Getenv(EnvDebug); len(env) != 0 {
 		log.Printf("[DEBUG] "+format+"\n", args...)
 	}
 }
 
-// PrintErrorf prints red error message on console.
+// PrintErrorf prints red error message to console.
 func PrintRedf(w io.Writer, format string, args ...interface{}) {
 	format = fmt.Sprintf("[red]%s[reset]", format)
 	fmt.Fprint(w,
 		colorstring.Color(fmt.Sprintf(format, args...)))
 }
 
-// CLI is the command line object
+// CLI is the main command line object
 type CLI struct {
-	// outStream and errStream are the stdout and stderr
-	// to write message from the CLI.
+	// outStream and errStream correspond to stdout and stderr, respectively,
+	// to take messages from the CLI.
 	outStream, errStream io.Writer
 }
 
@@ -136,7 +136,7 @@ func (cli *CLI) Run(args []string) int {
 	// Deprecated
 	flags.BoolVar(&stat, "stat", false, "")
 
-	// Parse flag
+	// Parse flags
 	if err := flags.Parse(args[1:]); err != nil {
 		return ExitCodeParseFlagsError
 	}
@@ -155,12 +155,12 @@ func (cli *CLI) Run(args []string) int {
 	parsedArgs := flags.Args()
 	if len(parsedArgs) != 2 {
 		PrintRedf(cli.errStream,
-			"Invalid argument: you must set TAG and PATH name.")
+			"Invalid argument: you must set TAG and PATH name.\n")
 		return ExitCodeBadArgs
 	}
 	tag, path := parsedArgs[0], parsedArgs[1]
 
-	// Extract github repository owner name.
+	// Extract github repository owner username.
 	// If it's not provided via command line flag, read it from .gitconfig
 	// (github user or git user).
 	if len(owner) == 0 {
@@ -176,7 +176,7 @@ func (cli *CLI) Run(args []string) int {
 			fmt.Fprintf(cli.errStream,
 				"Please set it via `-u` option.\n\n"+
 					"You can set default owner name in `github.username` or `user.name`\n"+
-					"in `~/.gitconfig` file")
+					"in `~/.gitconfig` file\n")
 			return ExitCodeOwnerNotFound
 		}
 	}
@@ -199,7 +199,7 @@ func (cli *CLI) Run(args []string) int {
 	}
 	Debugf("Repository: %s", repo)
 
-	// If GitHub api token is not provided via command line flag
+	// If GitHub API token is not provided via command line flag
 	// or env var then read it from .gitconfig file.
 	if len(token) == 0 {
 		var err error
@@ -217,7 +217,7 @@ func (cli *CLI) Run(args []string) int {
 	}
 	Debugf("Github API Token: %s", maskString(token))
 
-	// Set Base GitHub API. Base URL can be provided via env var. This is for GHE.
+	// Set Base GitHub API URL. Base URL can also be provided via env var for use with GHE.
 	baseURLStr := defaultBaseURL
 	if urlStr := os.Getenv(EnvGitHubAPI); len(urlStr) != 0 {
 		baseURLStr = urlStr
@@ -240,7 +240,7 @@ func (cli *CLI) Run(args []string) int {
 	// Create a GitHub client
 	gitHubClient, err := NewGitHubClient(owner, repo, token, baseURLStr)
 	if err != nil {
-		PrintRedf(cli.errStream, "Failed to construct GitHub client: %s", err)
+		PrintRedf(cli.errStream, "Failed to construct GitHub client: %s\n", err)
 		return ExitCodeError
 	}
 
@@ -262,14 +262,14 @@ func (cli *CLI) Run(args []string) int {
 	ctx := context.TODO()
 	release, err := ghr.CreateRelease(ctx, req, recreate)
 	if err != nil {
-		PrintRedf(cli.errStream, "Failed to create GitHub release page: %s", err)
+		PrintRedf(cli.errStream, "Failed to create GitHub release page: %s\n", err)
 		return ExitCodeError
 	}
 
 	if replace {
 		err := ghr.DeleteAssets(ctx, *release.ID, localAssets, parallel)
 		if err != nil {
-			PrintRedf(cli.errStream, "Failed to delete existing assets: %s", err)
+			PrintRedf(cli.errStream, "Failed to delete existing assets: %s\n", err)
 			return ExitCodeError
 		}
 	}
@@ -277,21 +277,31 @@ func (cli *CLI) Run(args []string) int {
 	// FIXME(tcnksm): More ideal way to change this
 	// This is for Github enterprise
 	if err := ghr.GitHub.SetUploadURL(*release.UploadURL); err != nil {
-		fmt.Fprintf(cli.errStream, "Failed to set upload URL %s: %s", *release.UploadURL, err)
+		fmt.Fprintf(cli.errStream, "Failed to set upload URL %s: %s\n", *release.UploadURL, err)
 		return ExitCodeError
 	}
 
 	err = ghr.UploadAssets(ctx, *release.ID, localAssets, parallel)
 	if err != nil {
-		PrintRedf(cli.errStream, "Failed to upload one of assets: %s", err)
+		PrintRedf(cli.errStream, "Failed to upload one of assets: %s\n", err)
 		return ExitCodeError
+	}
+
+	if !draft {
+		_, err := ghr.GitHub.EditRelease(ctx, *release.ID, &github.RepositoryRelease{
+			Draft: github.Bool(false),
+		})
+		if err != nil {
+			PrintRedf(cli.errStream, "Failed to publish release: %s\n", err)
+			return ExitCodeError
+		}
 	}
 
 	return ExitCodeOK
 }
 
-// maskString is used to mask string which should not be displayed
-// directly like auth token
+// maskString is used to mask a string which should not be displayed
+// directly, like the auth token
 func maskString(s string) string {
 	if len(s) < 5 {
 		return "**** (masked)"

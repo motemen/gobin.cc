@@ -12,12 +12,14 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// GHR contains the top level GitHub object
 type GHR struct {
 	GitHub GitHub
 
 	outStream io.Writer
 }
 
+// CreateRelease creates (or recreates) a new package release
 func (g *GHR) CreateRelease(ctx context.Context, req *github.RepositoryRelease, recreate bool) (*github.RepositoryRelease, error) {
 
 	// When draft release creation is requested,
@@ -27,11 +29,16 @@ func (g *GHR) CreateRelease(ctx context.Context, req *github.RepositoryRelease, 
 		return g.GitHub.CreateRelease(ctx, req)
 	}
 
+	// Always create release as draft first. After uploading assets, turn off
+	// draft unless the `-draft` flag is explicitly specified.
+	// It is to prevent users from seeing empty release.
+	req.Draft = github.Bool(true)
+
 	// Check release exists.
 	// If release is not found, then create a new release.
 	release, err := g.GitHub.GetRelease(ctx, *req.TagName)
 	if err != nil {
-		if err != RelaseNotFound {
+		if err != ErrReleaseNotFound {
 			return nil, errors.Wrap(err, "failed to get release")
 		}
 		Debugf("Release (with tag %s) not found: create a new one",
@@ -68,7 +75,9 @@ func (g *GHR) CreateRelease(ctx context.Context, req *github.RepositoryRelease, 
 	return g.GitHub.CreateRelease(ctx, req)
 }
 
-func (g *GHR) DeleteRelease(ctx context.Context, ID int, tag string) error {
+// DeleteRelease removes an existing release, if it exists. If it does not exist,
+// DeleteRelease returns an error
+func (g *GHR) DeleteRelease(ctx context.Context, ID int64, tag string) error {
 
 	err := g.GitHub.DeleteRelease(ctx, ID)
 	if err != nil {
@@ -87,7 +96,8 @@ func (g *GHR) DeleteRelease(ctx context.Context, ID int, tag string) error {
 	return nil
 }
 
-func (g *GHR) UploadAssets(ctx context.Context, releaseID int, localAssets []string, parallel int) error {
+// UploadAssets uploads the designated assets in parallel (determined by parallelism setting)
+func (g *GHR) UploadAssets(ctx context.Context, releaseID int64, localAssets []string, parallel int) error {
 	start := time.Now()
 	defer func() {
 		Debugf("UploadAssets: time: %d ms", int(time.Since(start).Seconds()*1000))
@@ -120,7 +130,8 @@ func (g *GHR) UploadAssets(ctx context.Context, releaseID int, localAssets []str
 	return nil
 }
 
-func (g *GHR) DeleteAssets(ctx context.Context, releaseID int, localAssets []string, parallel int) error {
+// DeleteAssets removes uploaded assets for a given release
+func (g *GHR) DeleteAssets(ctx context.Context, releaseID int64, localAssets []string, parallel int) error {
 	start := time.Now()
 	defer func() {
 		Debugf("DeleteAssets: time: %d ms", int(time.Since(start).Seconds()*1000))
