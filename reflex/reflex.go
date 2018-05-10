@@ -153,14 +153,21 @@ func (r *Reflex) filterMatching(out chan<- string, in <-chan string) {
 //   In the meantime, keep batching. When we've sent off all the batched
 //   messages, go back to the beginning.
 func (r *Reflex) batch(out chan<- string, in <-chan string) {
+
+	const silenceInterval = 300 * time.Millisecond
+
 	for name := range in {
 		r.backlog.Add(name)
-		timer := time.NewTimer(300 * time.Millisecond)
+		timer := time.NewTimer(silenceInterval)
 	outer:
 		for {
 			select {
 			case name := <-in:
 				r.backlog.Add(name)
+				if !timer.Stop() {
+					<-timer.C
+				}
+				timer.Reset(silenceInterval)
 			case <-timer.C:
 				for {
 					select {
