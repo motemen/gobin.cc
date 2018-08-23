@@ -188,11 +188,6 @@ func (c *GitHubClient) UploadAsset(ctx context.Context, releaseID int64, filenam
 		return nil, errors.Wrap(err, "failed to get abs path")
 	}
 
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to open file")
-	}
-
 	opts := &github.UploadOptions{
 		// Use base name by default
 		Name: filepath.Base(filename),
@@ -204,6 +199,13 @@ func (c *GitHubClient) UploadAsset(ctx context.Context, releaseID int64, filenam
 			res *github.Response
 			err error
 		)
+
+		f, err := os.Open(filename)
+		if err != nil {
+			return errors.Wrap(err, "failed to open file")
+		}
+		defer f.Close()
+
 		asset, res, err = c.Repositories.UploadReleaseAsset(context.TODO(), c.Owner, c.Repo, releaseID, opts, f)
 		if err != nil {
 			return errors.Wrapf(err, "failed to upload release asset: %s", filename)
